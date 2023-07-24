@@ -111,9 +111,9 @@ fn next_token(input: &str, text_mode: TextMode) -> Option<Token> {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Cursor {
-    line: usize,
-    column: usize,
-    byte_offset: usize,
+    pub line: usize,
+    pub column: usize,
+    pub byte_offset: usize,
 }
 
 impl Default for Cursor {
