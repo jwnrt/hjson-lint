@@ -5,6 +5,22 @@ pub struct Null;
 
 impl Parse for Null {
     fn parse(input: &str) -> Option<Token> {
-        todo!()
+        match input.starts_with("null") {
+            true => Some(Token::new(Null, 4)),
+            false => None,
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn null() {
+        assert_eq!(Null::parse("null"), Some(Token::new(Null, 4)));
+        assert_eq!(Null::parse("null "), Some(Token::new(Null, 4)));
+        assert_eq!(Null::parse(" null"), None);
+        assert_eq!(Null::parse(""), None);
     }
 }
