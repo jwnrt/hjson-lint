@@ -1,15 +1,12 @@
-use super::{Parse, Token};
+use super::{Parse, Token, TokenKind};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Number {
-    Float,
-    Integer,
-}
+pub struct Number;
 
 impl Parse for Number {
     fn parse(mut input: &str) -> Option<Token> {
         let mut len = 0;
-        let mut kind = Number::Integer;
+        let mut kind = TokenKind::Integer;
 
         if input.starts_with('-') {
             len += 1;
@@ -39,7 +36,7 @@ impl Parse for Number {
 
             if non_digit > 0 {
                 len += 1 + non_digit;
-                kind = Number::Float;
+                kind = TokenKind::Float;
                 input = &input[1 + non_digit..];
             }
         }
@@ -57,7 +54,7 @@ impl Parse for Number {
 
             if non_digit > 0 {
                 len += exp_len + non_digit;
-                kind = Number::Float;
+                kind = TokenKind::Float;
             }
         }
 
@@ -94,7 +91,7 @@ mod test {
         for case in cases {
             assert_eq!(
                 Number::parse(case),
-                Some(Token::new(Number::Float, case.len()))
+                Some(Token::new(TokenKind::Float, case.len()))
             );
         }
 
@@ -110,7 +107,7 @@ mod test {
         ];
 
         for (case, len) in partial_cases {
-            assert_eq!(Number::parse(case), Some(Token::new(Number::Float, len)));
+            assert_eq!(Number::parse(case), Some(Token::new(TokenKind::Float, len)));
         }
     }
 
@@ -121,7 +118,7 @@ mod test {
         for case in cases {
             assert_eq!(
                 Number::parse(case),
-                Some(Token::new(Number::Integer, case.len()))
+                Some(Token::new(TokenKind::Integer, case.len()))
             );
         }
 
@@ -134,7 +131,10 @@ mod test {
             ("123.E", 3),
         ];
         for (case, len) in partial_cases {
-            assert_eq!(Number::parse(case), Some(Token::new(Number::Integer, len)));
+            assert_eq!(
+                Number::parse(case),
+                Some(Token::new(TokenKind::Integer, len))
+            );
         }
     }
 

@@ -1,7 +1,13 @@
-use super::{Parse, Token};
+use super::{Parse, Token, TokenKind};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Boolean;
+
+impl From<Boolean> for TokenKind {
+    fn from(_: Boolean) -> Self {
+        TokenKind::Boolean
+    }
+}
 
 impl Parse for Boolean {
     fn parse(input: &str) -> Option<Token> {

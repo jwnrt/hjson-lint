@@ -1,15 +1,12 @@
-use super::{Parse, Token};
+use super::{Parse, Token, TokenKind};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Whitespace {
-    NewLine,
-    Other,
-}
+pub struct Whitespace;
 
 impl Parse for Whitespace {
     fn parse(input: &str) -> Option<Token> {
         if input.starts_with('\n') {
-            return Some(Token::new(Whitespace::NewLine, 1));
+            return Some(Token::new(TokenKind::NewLine, 1));
         }
 
         let non_whitespace = input
@@ -18,7 +15,7 @@ impl Parse for Whitespace {
 
         match non_whitespace {
             0 => None,
-            len => Some(Token::new(Whitespace::Other, len)),
+            len => Some(Token::new(TokenKind::Whitespace, len)),
         }
     }
 }
@@ -31,19 +28,19 @@ mod test {
     fn whitespace() {
         assert_eq!(
             Whitespace::parse(" "),
-            Some(Token::new(Whitespace::Other, 1))
+            Some(Token::new(TokenKind::Whitespace, 1))
         );
         assert_eq!(
             Whitespace::parse("\t"),
-            Some(Token::new(Whitespace::Other, 1))
+            Some(Token::new(TokenKind::Whitespace, 1))
         );
         assert_eq!(
             Whitespace::parse("\n"),
-            Some(Token::new(Whitespace::NewLine, 1))
+            Some(Token::new(TokenKind::NewLine, 1))
         );
         assert_eq!(
             Whitespace::parse(" \t\n"),
-            Some(Token::new(Whitespace::Other, 2))
+            Some(Token::new(TokenKind::Whitespace, 2))
         );
         assert_eq!(Whitespace::parse("a \t\n"), None);
     }

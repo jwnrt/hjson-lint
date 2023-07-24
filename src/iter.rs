@@ -35,8 +35,8 @@ impl<'a> Iterator for Tokens<'a> {
         let token = next_token(self.input, self.text_mode)?;
 
         self.text_mode = match token.kind {
-            TokenKind::Symbol(Symbol::Colon) => TextMode::Value,
-            TokenKind::Whitespace(_) => self.text_mode,
+            TokenKind::Colon => TextMode::Value,
+            TokenKind::Whitespace => self.text_mode,
             _ => TextMode::Key,
         };
 
@@ -91,30 +91,30 @@ mod test {
             '''
         "#};
         let expected = [
-            Token::new(Key::Unquoted, 3),
-            Token::new(Symbol::Colon, 1),
-            Token::new(Whitespace::Other, 1),
-            Token::new(Text::Unquoted, 3),
-            Token::new(Whitespace::NewLine, 1),
-            Token::new(Key::Single, 5),
-            Token::new(Symbol::Colon, 1),
-            Token::new(Whitespace::Other, 1),
-            Token::new(Text::Unquoted, 19),
-            Token::new(Whitespace::NewLine, 1),
-            Token::new(Comment::Line, 10),
-            Token::new(Whitespace::NewLine, 1),
-            Token::new(Key::Unquoted, 3),
-            Token::new(Symbol::Colon, 1),
-            Token::new(Whitespace::Other, 1),
-            Token::new(Text::Double, 7),
-            Token::new(Whitespace::Other, 1),
-            Token::new(Comment::Line, 10),
-            Token::new(Whitespace::NewLine, 1),
-            Token::new(Key::Unquoted, 9),
-            Token::new(Symbol::Colon, 1),
-            Token::new(Whitespace::Other, 1),
-            Token::new(Text::Multi, 34),
-            Token::new(Whitespace::NewLine, 1),
+            Token::new(TokenKind::TextUnquoted, 3),
+            Token::new(TokenKind::Colon, 1),
+            Token::new(TokenKind::Whitespace, 1),
+            Token::new(TokenKind::TextUnquoted, 3),
+            Token::new(TokenKind::NewLine, 1),
+            Token::new(TokenKind::TextSingle, 5),
+            Token::new(TokenKind::Colon, 1),
+            Token::new(TokenKind::Whitespace, 1),
+            Token::new(TokenKind::TextUnquoted, 19),
+            Token::new(TokenKind::NewLine, 1),
+            Token::new(TokenKind::LineComment, 10),
+            Token::new(TokenKind::NewLine, 1),
+            Token::new(TokenKind::TextUnquoted, 3),
+            Token::new(TokenKind::Colon, 1),
+            Token::new(TokenKind::Whitespace, 1),
+            Token::new(TokenKind::TextDouble, 7),
+            Token::new(TokenKind::Whitespace, 1),
+            Token::new(TokenKind::LineComment, 10),
+            Token::new(TokenKind::NewLine, 1),
+            Token::new(TokenKind::TextUnquoted, 9),
+            Token::new(TokenKind::Colon, 1),
+            Token::new(TokenKind::Whitespace, 1),
+            Token::new(TokenKind::TextMulti, 34),
+            Token::new(TokenKind::NewLine, 1),
         ];
 
         let tokens: Vec<_> = Tokens::parse(input).collect();

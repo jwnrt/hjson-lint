@@ -39,60 +39,23 @@ impl Token {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TokenKind {
-    Boolean(Boolean),
-    Comment(Comment),
-    Key(Key),
-    Null(Null),
-    Number(Number),
-    Symbol(Symbol),
-    Text(Text),
-    Whitespace(Whitespace),
-}
-
-impl From<Boolean> for TokenKind {
-    fn from(value: Boolean) -> Self {
-        Self::Boolean(value)
-    }
-}
-
-impl From<Comment> for TokenKind {
-    fn from(value: Comment) -> Self {
-        Self::Comment(value)
-    }
-}
-
-impl From<Key> for TokenKind {
-    fn from(value: Key) -> Self {
-        Self::Key(value)
-    }
-}
-
-impl From<Null> for TokenKind {
-    fn from(value: Null) -> Self {
-        Self::Null(value)
-    }
-}
-
-impl From<Number> for TokenKind {
-    fn from(value: Number) -> Self {
-        Self::Number(value)
-    }
-}
-
-impl From<Symbol> for TokenKind {
-    fn from(value: Symbol) -> Self {
-        Self::Symbol(value)
-    }
-}
-
-impl From<Text> for TokenKind {
-    fn from(value: Text) -> Self {
-        Self::Text(value)
-    }
-}
-
-impl From<Whitespace> for TokenKind {
-    fn from(value: Whitespace) -> Self {
-        Self::Whitespace(value)
-    }
+    Boolean,
+    LineComment,
+    BlockComment,
+    HashComment,
+    Null,
+    Integer,
+    Float,
+    OpenBrace,
+    CloseBrace,
+    OpenBracket,
+    CloseBracket,
+    Colon,
+    Comma,
+    TextSingle,
+    TextDouble,
+    TextMulti,
+    TextUnquoted,
+    NewLine,
+    Whitespace,
 }

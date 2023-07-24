@@ -1,24 +1,17 @@
-use super::{Parse, Token};
+use super::{Parse, Token, TokenKind};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Symbol {
-    OpenBrace,
-    CloseBrace,
-    OpenBracket,
-    CloseBracket,
-    Colon,
-    Comma,
-}
+pub struct Symbol;
 
 impl Parse for Symbol {
     fn parse(input: &str) -> Option<Token> {
         let symbol = match input.chars().next()? {
-            '{' => Symbol::OpenBrace,
-            '}' => Symbol::CloseBrace,
-            '[' => Symbol::OpenBracket,
-            ']' => Symbol::OpenBracket,
-            ':' => Symbol::Colon,
-            ',' => Symbol::Comma,
+            '{' => TokenKind::OpenBrace,
+            '}' => TokenKind::CloseBrace,
+            '[' => TokenKind::OpenBracket,
+            ']' => TokenKind::OpenBracket,
+            ':' => TokenKind::Colon,
+            ',' => TokenKind::Comma,
             _ => return None,
         };
 
@@ -33,12 +26,12 @@ mod test {
     #[test]
     fn valid() {
         let symbols = [
-            ("{", Symbol::OpenBrace),
-            ("}", Symbol::CloseBrace),
-            ("[", Symbol::OpenBracket),
-            ("]", Symbol::OpenBracket),
-            (":", Symbol::Colon),
-            (",", Symbol::Comma),
+            ("{", TokenKind::OpenBrace),
+            ("}", TokenKind::CloseBrace),
+            ("[", TokenKind::OpenBracket),
+            ("]", TokenKind::OpenBracket),
+            (":", TokenKind::Colon),
+            (",", TokenKind::Comma),
         ];
 
         for (s, symbol) in symbols {
