@@ -38,7 +38,11 @@ impl<'a> Iterator for Tokens<'a> {
 
         self.text_mode = match token.kind {
             TokenKind::Colon => TextMode::Value,
-            TokenKind::Whitespace => self.text_mode,
+            TokenKind::Whitespace
+            | TokenKind::NewLine
+            | TokenKind::LineComment
+            | TokenKind::HashComment
+            | TokenKind::BlockComment => self.text_mode,
             _ => TextMode::Key,
         };
 
