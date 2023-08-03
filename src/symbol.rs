@@ -9,7 +9,7 @@ impl Parse for Symbol {
             '{' => TokenKind::OpenBrace,
             '}' => TokenKind::CloseBrace,
             '[' => TokenKind::OpenBracket,
-            ']' => TokenKind::OpenBracket,
+            ']' => TokenKind::CloseBracket,
             ':' => TokenKind::Colon,
             ',' => TokenKind::Comma,
             _ => return None,
@@ -29,7 +29,7 @@ mod test {
             ("{", TokenKind::OpenBrace),
             ("}", TokenKind::CloseBrace),
             ("[", TokenKind::OpenBracket),
-            ("]", TokenKind::OpenBracket),
+            ("]", TokenKind::CloseBracket),
             (":", TokenKind::Colon),
             (",", TokenKind::Comma),
         ];

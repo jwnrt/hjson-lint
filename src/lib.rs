@@ -8,9 +8,11 @@ mod symbol;
 mod text;
 mod whitespace;
 
+use std::fmt::{self, Display};
+
 pub use boolean::Boolean;
 pub use comment::Comment;
-pub use iter::Tokens;
+pub use iter::{Cursor, Tokens};
 pub use key::Key;
 pub use null::Null;
 pub use number::Number;
@@ -58,4 +60,31 @@ pub enum TokenKind {
     TextUnquoted,
     NewLine,
     Whitespace,
+}
+
+impl Display for TokenKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let name = match self {
+            Self::Boolean => "Boolean",
+            Self::LineComment => "line comment",
+            Self::BlockComment => "block comment",
+            Self::HashComment => "hash comment",
+            Self::Null => "null",
+            Self::Integer => "integer",
+            Self::Float => "float",
+            Self::OpenBrace => "{",
+            Self::CloseBrace => "}",
+            Self::OpenBracket => "[",
+            Self::CloseBracket => "]",
+            Self::Colon => ":",
+            Self::Comma => ",",
+            Self::TextSingle => "single-quoted string",
+            Self::TextDouble => "double-quoted string",
+            Self::TextMulti => "multi-line string",
+            Self::TextUnquoted => "unquoted string",
+            Self::NewLine => "newline",
+            Self::Whitespace => "whitespace",
+        };
+        f.write_str(name)
+    }
 }
