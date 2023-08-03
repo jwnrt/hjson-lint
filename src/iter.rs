@@ -1,5 +1,3 @@
-use std::iter;
-
 use crate::boolean::Boolean;
 use crate::comment::Comment;
 use crate::key::Key;
@@ -71,22 +69,31 @@ enum TextMode {
 }
 
 fn next_token(input: &str, text_mode: TextMode) -> Option<Token> {
-    let parsers = [
-        Boolean::parse,
-        Comment::parse,
-        Null::parse,
-        Number::parse,
-        Symbol::parse,
-        Whitespace::parse,
-    ];
-
-    let text_parser = match text_mode {
-        TextMode::Key => Key::parse,
-        TextMode::Value => Text::parse,
+    // The parser behaves differently depending on whether it's in `Key` or
+    // `Value` mode. Strings take priority over Booleans, numbers, and `null`
+    // for keys, whereas strings are parsed _last_ for values.
+    let parsers = match text_mode {
+        TextMode::Key => [
+            Comment::parse,
+            Symbol::parse,
+            Whitespace::parse,
+            Key::parse,
+            Boolean::parse,
+            Null::parse,
+            Number::parse,
+        ],
+        TextMode::Value => [
+            Comment::parse,
+            Symbol::parse,
+            Whitespace::parse,
+            Boolean::parse,
+            Null::parse,
+            Number::parse,
+            Text::parse,
+        ],
     };
-    let mut parser_chain = parsers.into_iter().chain(iter::once(text_parser));
 
-    parser_chain.find_map(|p| p(input))
+    parsers.into_iter().find_map(|p| p(input))
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
