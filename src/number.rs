@@ -55,10 +55,20 @@ impl Parse for Number {
             if non_digit > 0 {
                 len += exp_len + non_digit;
                 kind = TokenKind::Float;
+                input = &input[exp_len + non_digit..];
             }
         }
 
-        Some(Token::new(kind, len))
+        // Numbers must be terminated by whitespace or a symbol character, otherwise
+        // it could be an unquoted string that started with a digit.
+        let term_symbols = ['{', '}', '[', ']', ':', ',', '/', '#'];
+        match input.is_empty()
+            || input.starts_with(char::is_whitespace)
+            || input.starts_with(|c: char| term_symbols.contains(&c))
+        {
+            true => Some(Token::new(kind, len)),
+            false => None,
+        }
     }
 }
 
@@ -96,18 +106,18 @@ mod test {
         }
 
         let partial_cases = [
-            ("123.123e", 7),
-            ("123.123E", 7),
-            ("123.123+", 7),
-            ("123.123-", 7),
-            ("123.123e+", 7),
-            ("123.123E+", 7),
-            ("123.123e-", 7),
-            ("123.123E-", 7),
+            "123.123e",
+            "123.123E",
+            "123.123+",
+            "123.123-",
+            "123.123e+",
+            "123.123E+",
+            "123.123e-",
+            "123.123E-",
         ];
 
-        for (case, len) in partial_cases {
-            assert_eq!(Number::parse(case), Some(Token::new(TokenKind::Float, len)));
+        for case in partial_cases {
+            assert_eq!(Number::parse(case), None);
         }
     }
 
@@ -122,19 +132,9 @@ mod test {
             );
         }
 
-        let partial_cases = [
-            ("0123", 1),
-            ("123e", 3),
-            ("123E", 3),
-            ("123.", 3),
-            ("123.e", 3),
-            ("123.E", 3),
-        ];
-        for (case, len) in partial_cases {
-            assert_eq!(
-                Number::parse(case),
-                Some(Token::new(TokenKind::Integer, len))
-            );
+        let partial_cases = ["0123", "123e", "123E", "123.", "123.e", "123.E"];
+        for case in partial_cases {
+            assert_eq!(Number::parse(case), None);
         }
     }
 
