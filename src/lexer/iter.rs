@@ -1,12 +1,12 @@
-use crate::boolean::Boolean;
-use crate::comment::Comment;
-use crate::key::Key;
-use crate::null::Null;
-use crate::number::Number;
-use crate::symbol::Symbol;
-use crate::text::Text;
-use crate::whitespace::Whitespace;
-use crate::{Parse, Token, TokenKind};
+use super::boolean::Boolean;
+use super::comment::Comment;
+use super::key::Key;
+use super::null::Null;
+use super::number::Number;
+use super::symbol::Symbol;
+use super::text::Text;
+use super::whitespace::Whitespace;
+use super::{Parse, Token, TokenKind};
 
 pub struct Tokens<'a> {
     input: &'a str,

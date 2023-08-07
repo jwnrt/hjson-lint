@@ -1,6 +1,4 @@
-use crate::TokenKind;
-
-use super::{Parse, Token};
+use super::{Parse, Token, TokenKind};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Null;
