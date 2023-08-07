@@ -129,6 +129,7 @@ mod test {
     use indoc::indoc;
     use std::iter;
 
+    /// Test a typical file which uses a few different Hjson features.
     #[test]
     fn typical() {
         let input = indoc! {r#"
@@ -196,9 +197,45 @@ mod test {
         ];
 
         let tokens: Vec<_> = Tokens::parse(input).collect();
-        let token_spans = iter::zip(expected_cursors, expected_tokens);
-        for (expected, got) in iter::zip(token_spans, tokens) {
-            assert_eq!(expected, got);
+        let expected = iter::zip(expected_cursors, expected_tokens);
+        for (got, expected) in iter::zip(tokens, expected) {
+            assert_eq!(got, expected);
+        }
+    }
+
+    /// Test that checks unquoted string values that look like numbers.
+    #[test]
+    fn string_not_number() {
+        let input = "foo: 20 apples";
+
+        let tokens: Vec<_> = Tokens::parse(input).collect();
+        let expected = [
+            (Cursor::new(1, 1, 0), Token::new(TokenKind::TextUnquoted, 3)),
+            (Cursor::new(1, 4, 3), Token::new(TokenKind::Colon, 1)),
+            (Cursor::new(1, 5, 4), Token::new(TokenKind::Whitespace, 1)),
+            (Cursor::new(1, 6, 5), Token::new(TokenKind::TextUnquoted, 9)),
+        ];
+
+        for (got, expected) in iter::zip(tokens, expected) {
+            assert_eq!(got, expected);
+        }
+    }
+
+    /// Test that checks numbers used as keys are actually parsed as unquoted strings.
+    #[test]
+    fn number_key() {
+        let input = "10: 'foo'";
+
+        let tokens: Vec<_> = Tokens::parse(input).collect();
+        let expected = [
+            (Cursor::new(1, 1, 0), Token::new(TokenKind::TextUnquoted, 2)),
+            (Cursor::new(1, 3, 2), Token::new(TokenKind::Colon, 1)),
+            (Cursor::new(1, 4, 3), Token::new(TokenKind::Whitespace, 1)),
+            (Cursor::new(1, 5, 4), Token::new(TokenKind::TextSingle, 5)),
+        ];
+
+        for (got, expected) in iter::zip(tokens, expected) {
+            assert_eq!(got, expected);
         }
     }
 }

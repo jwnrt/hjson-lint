@@ -59,13 +59,15 @@ impl Parse for Number {
             }
         }
 
-        // Numbers must be terminated by whitespace or a symbol character, otherwise
-        // it could be an unquoted string that started with a digit.
-        let term_symbols = ['{', '}', '[', ']', ':', ',', '/', '#'];
-        match input.is_empty()
-            || input.starts_with(char::is_whitespace)
-            || input.starts_with(|c: char| term_symbols.contains(&c))
-        {
+        // Numbers must be terminated by one of the characters that cannot
+        // appear in an unquoted string (or a newline), otherwise it could be
+        // an unquoted string that started with a digit.
+        // We strip whitespace first (except for newlines).
+        let term_symbols = [',', ':', '[', ']', '{', '}', '\n'];
+        let input = input
+            .strip_prefix(|c: char| c.is_whitespace() && c != '\n')
+            .unwrap_or(input);
+        match input.is_empty() || input.starts_with(|c: char| term_symbols.contains(&c)) {
             true => Some(Token::new(kind, len)),
             false => None,
         }
