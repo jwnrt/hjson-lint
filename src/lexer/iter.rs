@@ -12,14 +12,22 @@ pub struct Tokens<'a> {
     input: &'a str,
     cursor: Cursor,
     text_mode: TextMode,
+    done: bool,
 }
 
 impl<'a> Tokens<'a> {
+    /// Zero-length EOF token returned at the end of the file.
+    const EOF: Token = Token {
+        kind: TokenKind::Eof,
+        len: 0,
+    };
+
     pub fn parse(input: &'a str) -> Self {
         Self {
             input,
             cursor: Cursor::default(),
             text_mode: TextMode::Key,
+            done: false,
         }
     }
 }
@@ -29,7 +37,12 @@ impl<'a> Iterator for Tokens<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.input.is_empty() {
-            return None;
+            if self.done {
+                return None;
+            } else {
+                self.done = true;
+                return Some((self.cursor, Self::EOF));
+            }
         }
 
         let token = next_token(self.input, self.text_mode)?;
@@ -168,6 +181,7 @@ mod test {
             Token::new(TokenKind::Whitespace, 1),
             Token::new(TokenKind::TextMulti, 34),
             Token::new(TokenKind::NewLine, 1),
+            Token::new(TokenKind::Eof, 0),
         ];
         let expected_cursors = [
             Cursor::new(1, 1, 0),
@@ -194,6 +208,7 @@ mod test {
             Cursor::new(5, 11, 81),
             Cursor::new(5, 12, 82),
             Cursor::new(9, 4, 116),
+            Cursor::new(10, 1, 117),
         ];
 
         let tokens: Vec<_> = Tokens::parse(input).collect();
@@ -214,6 +229,7 @@ mod test {
             (Cursor::new(1, 4, 3), Token::new(TokenKind::Colon, 1)),
             (Cursor::new(1, 5, 4), Token::new(TokenKind::Whitespace, 1)),
             (Cursor::new(1, 6, 5), Token::new(TokenKind::TextUnquoted, 9)),
+            (Cursor::new(1, 15, 14), Token::new(TokenKind::Eof, 0)),
         ];
 
         for (got, expected) in iter::zip(tokens, expected) {
@@ -232,6 +248,7 @@ mod test {
             (Cursor::new(1, 3, 2), Token::new(TokenKind::Colon, 1)),
             (Cursor::new(1, 4, 3), Token::new(TokenKind::Whitespace, 1)),
             (Cursor::new(1, 5, 4), Token::new(TokenKind::TextSingle, 5)),
+            (Cursor::new(1, 10, 9), Token::new(TokenKind::Eof, 0)),
         ];
 
         for (got, expected) in iter::zip(tokens, expected) {

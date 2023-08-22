@@ -41,6 +41,7 @@ impl Token {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TokenKind {
+    Eof,
     Boolean,
     LineComment,
     BlockComment,
@@ -65,6 +66,7 @@ pub enum TokenKind {
 impl Display for TokenKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let name = match self {
+            Self::Eof => "EOF",
             Self::Boolean => "Boolean",
             Self::LineComment => "line comment",
             Self::BlockComment => "block comment",
