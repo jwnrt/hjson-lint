@@ -8,7 +8,6 @@ type ParseResult<T> = Result<T, ParseError>;
 
 pub struct Parser<'a> {
     tokens: Peekable<Tokens<'a>>,
-    stack: Vec<Token>,
 }
 
 impl<'a> Parser<'a> {
@@ -46,10 +45,8 @@ impl<'a> Parser<'a> {
 
     pub fn parse(input: &'a str) -> ParseResult<()> {
         let tokens = Tokens::parse(input).peekable();
-        let mut parser = Self {
-            tokens,
-            stack: Vec::new(),
-        };
+        let mut parser = Self { tokens };
+
         parser.parse_root()
     }
 
@@ -70,19 +67,26 @@ impl<'a> Parser<'a> {
         Ok(())
     }
 
-    fn parse_member(&mut self) -> ParseResult<bool> {
-        self.skip(Self::HIDDEN);
-        if !self.eat(Self::KEY) {
-            return Ok(false);
+    fn parse_map_members(&mut self) -> ParseResult<()> {
+        loop {
+            self.skip(Self::HIDDEN);
+            if !self.eat(Self::KEY) {
+                break;
+            }
+
+            self.skip(Self::HIDDEN);
+            self.expect(TokenKind::Colon)?;
+
+            self.skip(Self::HIDDEN);
+            self.expect_value()?;
+
+            self.skip(Self::HIDDEN_LINE);
+            if !self.eat(&[TokenKind::Comma, TokenKind::NewLine]) {
+                break;
+            }
         }
 
-        self.skip(Self::HIDDEN);
-        self.expect(TokenKind::Colon)?;
-
-        self.skip(Self::HIDDEN);
-        self.expect_value()?;
-
-        Ok(true)
+        Ok(())
     }
 
     fn parse_value(&mut self) -> ParseResult<bool> {
@@ -116,21 +120,6 @@ impl<'a> Parser<'a> {
         self.expect(TokenKind::CloseBrace)?;
 
         Ok(true)
-    }
-
-    fn parse_map_members(&mut self) -> ParseResult<()> {
-        loop {
-            self.skip(Self::HIDDEN);
-
-            self.parse_member()?;
-
-            self.skip(Self::HIDDEN_LINE);
-            if !self.eat(&[TokenKind::Comma, TokenKind::NewLine]) {
-                break;
-            }
-        }
-
-        Ok(())
     }
 
     fn parse_array(&mut self) -> ParseResult<bool> {
@@ -179,7 +168,6 @@ impl<'a> Parser<'a> {
 
         if kinds.contains(&next.kind) {
             let (_, token) = self.tokens.next().expect("expected token");
-            self.stack.push(token);
             true
         } else {
             false
@@ -195,7 +183,6 @@ impl<'a> Parser<'a> {
         let (cursor, token) = self.tokens.next().expect("expected token");
 
         if token.kind == kind {
-            self.stack.push(token);
             Ok(())
         } else {
             Err(ParseError {
