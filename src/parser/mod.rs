@@ -8,7 +8,7 @@ use crate::lexer::{Cursor, Span, TokenKind, Tokens};
 
 type ParseResult<T> = Result<T, ParseError>;
 
-mod ast;
+pub mod ast;
 
 use ast::Node;
 
