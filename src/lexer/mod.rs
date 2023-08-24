@@ -12,7 +12,7 @@ use std::fmt::{self, Display};
 
 pub use boolean::Boolean;
 pub use comment::Comment;
-pub use iter::{Cursor, Tokens};
+pub use iter::{Cursor, Span, Tokens};
 pub use key::Key;
 pub use null::Null;
 pub use number::Number;
@@ -25,7 +25,7 @@ trait Parse: Sized {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Token {
+struct Token {
     pub kind: TokenKind,
     pub len: usize,
 }

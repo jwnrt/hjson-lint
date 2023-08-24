@@ -1,14 +1,14 @@
-use crate::lexer::Token;
+use crate::lexer::Span;
 
 #[derive(Clone, Debug)]
 pub struct Node<T> {
-    _before: Vec<Token>,
+    _before: Vec<Span>,
     _inner: T,
-    _after: Vec<Token>,
+    _after: Vec<Span>,
 }
 
 impl<T> Node<T> {
-    pub fn new(before: Vec<Token>, inner: T, after: Vec<Token>) -> Self {
+    pub fn new(before: Vec<Span>, inner: T, after: Vec<Span>) -> Self {
         Self {
             _before: before,
             _inner: inner,
@@ -19,35 +19,35 @@ impl<T> Node<T> {
 
 #[derive(Clone, Debug)]
 pub struct Map {
-    pub open_brace: Option<Node<Token>>,
+    pub open_brace: Option<Node<Span>>,
     pub members: Vec<Node<MapMember>>,
-    pub close_brace: Option<Node<Token>>,
+    pub close_brace: Option<Node<Span>>,
 }
 
 #[derive(Clone, Debug)]
 pub struct MapMember {
-    pub key: Token,
-    pub colon: Node<Token>,
+    pub key: Span,
+    pub colon: Node<Span>,
     pub value: Value,
-    pub comma: Option<Node<Token>>,
+    pub comma: Option<Node<Span>>,
 }
 
 #[derive(Clone, Debug)]
 pub struct Array {
-    pub open_bracket: Node<Token>,
+    pub open_bracket: Node<Span>,
     pub members: Vec<Node<ArrayMember>>,
-    pub close_bracket: Node<Token>,
+    pub close_bracket: Node<Span>,
 }
 
 #[derive(Clone, Debug)]
 pub struct ArrayMember {
     pub value: Value,
-    pub comma: Option<Node<Token>>,
+    pub comma: Option<Node<Span>>,
 }
 
 #[derive(Clone, Debug)]
 pub enum Value {
     Map(Map),
     Array(Array),
-    Value(Token),
+    Value(Span),
 }

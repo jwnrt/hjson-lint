@@ -4,7 +4,7 @@ use std::iter;
 use std::iter::Peekable;
 use std::mem;
 
-use crate::lexer::{Cursor, Token, TokenKind, Tokens};
+use crate::lexer::{Cursor, Span, TokenKind, Tokens};
 
 type ParseResult<T> = Result<T, ParseError>;
 
@@ -253,45 +253,43 @@ impl<'a> Parser<'a> {
         }
 
         // This iterator returns an EOF token at the end (not `None`), so we can expect it.
-        let (cursor, token) = self.tokens.next().expect("expected token");
+        let next = self.tokens.next().expect("expected token");
 
         Err(ParseError {
-            cursor,
             expected: String::from("value"),
-            got: token.kind,
+            got: next,
         })
     }
 
     #[must_use]
-    fn eat(&mut self, kinds: &[TokenKind]) -> Option<Token> {
-        let Some((_, next)) = self.tokens.peek() else {
+    fn eat(&mut self, kinds: &[TokenKind]) -> Option<Span> {
+        let Some(next) = self.tokens.peek() else {
             return None;
         };
 
         if kinds.contains(&next.kind) {
-            let (_, token) = self.tokens.next().expect("expected token");
-            Some(token)
+            let span = self.tokens.next().expect("expected token");
+            Some(span)
         } else {
             None
         }
     }
 
     #[must_use]
-    fn skip(&mut self, kinds: &[TokenKind]) -> Vec<Token> {
+    fn skip(&mut self, kinds: &[TokenKind]) -> Vec<Span> {
         iter::from_fn(|| self.eat(kinds)).collect()
     }
 
-    fn expect(&mut self, kind: TokenKind) -> ParseResult<Token> {
+    fn expect(&mut self, kind: TokenKind) -> ParseResult<Span> {
         // This iterator returns an EOF token at the end (not `None`), so we can expect it.
-        let (cursor, token) = self.tokens.next().expect("expected token");
+        let next = self.tokens.next().expect("expected token");
 
-        if token.kind == kind {
-            Ok(token)
+        if next.kind == kind {
+            Ok(next)
         } else {
             Err(ParseError {
-                cursor,
                 expected: kind.to_string(),
-                got: token.kind,
+                got: next,
             })
         }
     }
@@ -299,19 +297,22 @@ impl<'a> Parser<'a> {
 
 #[derive(Clone, Debug)]
 pub struct ParseError {
-    cursor: Cursor,
+    got: Span,
     expected: String,
-    got: TokenKind,
 }
 
 impl Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let Self {
             expected,
-            got,
-            cursor: Cursor { line, column, .. },
+            got:
+                Span {
+                    start: Cursor { line, column, .. },
+                    kind,
+                    ..
+                },
         } = self;
-        write!(f, "{line}:{column}: expected {expected}, got {got}",)
+        write!(f, "{line}:{column}: expected {expected}, got {kind}")
     }
 }
 
