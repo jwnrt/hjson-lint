@@ -16,12 +16,6 @@ pub struct Tokens<'a> {
 }
 
 impl<'a> Tokens<'a> {
-    /// Zero-length EOF token returned at the end of the file.
-    const EOF: Token = Token {
-        kind: TokenKind::Eof,
-        len: 0,
-    };
-
     pub fn parse(input: &'a str) -> Self {
         Self {
             input,
@@ -32,8 +26,21 @@ impl<'a> Tokens<'a> {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Span {
+    pub kind: TokenKind,
+    pub start: Cursor,
+    pub len: usize,
+}
+
+impl Span {
+    pub fn new(kind: TokenKind, start: Cursor, len: usize) -> Self {
+        Span { kind, start, len }
+    }
+}
+
 impl<'a> Iterator for Tokens<'a> {
-    type Item = (Cursor, Token);
+    type Item = Span;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.input.is_empty() {
@@ -41,7 +48,7 @@ impl<'a> Iterator for Tokens<'a> {
                 return None;
             } else {
                 self.done = true;
-                return Some((self.cursor, Self::EOF));
+                return Some(Span::new(TokenKind::Eof, self.cursor, 0));
             }
         }
 
@@ -71,7 +78,7 @@ impl<'a> Iterator for Tokens<'a> {
         self.input = &self.input[token.len..];
 
         // Ensure we give the cursor for _this_ token and not the next.
-        Some((prev_cursor, token))
+        Some(Span::new(token.kind, prev_cursor, token.len))
     }
 }
 
@@ -156,63 +163,35 @@ mod test {
                 text
             '''
         "#};
-        let expected_tokens = [
-            Token::new(TokenKind::TextUnquoted, 3),
-            Token::new(TokenKind::Colon, 1),
-            Token::new(TokenKind::Whitespace, 1),
-            Token::new(TokenKind::TextUnquoted, 3),
-            Token::new(TokenKind::NewLine, 1),
-            Token::new(TokenKind::TextSingle, 5),
-            Token::new(TokenKind::Colon, 1),
-            Token::new(TokenKind::Whitespace, 1),
-            Token::new(TokenKind::TextUnquoted, 19),
-            Token::new(TokenKind::NewLine, 1),
-            Token::new(TokenKind::LineComment, 10),
-            Token::new(TokenKind::NewLine, 1),
-            Token::new(TokenKind::TextUnquoted, 3),
-            Token::new(TokenKind::Colon, 1),
-            Token::new(TokenKind::Whitespace, 1),
-            Token::new(TokenKind::TextDouble, 7),
-            Token::new(TokenKind::Whitespace, 1),
-            Token::new(TokenKind::LineComment, 10),
-            Token::new(TokenKind::NewLine, 1),
-            Token::new(TokenKind::TextUnquoted, 9),
-            Token::new(TokenKind::Colon, 1),
-            Token::new(TokenKind::Whitespace, 1),
-            Token::new(TokenKind::TextMulti, 34),
-            Token::new(TokenKind::NewLine, 1),
-            Token::new(TokenKind::Eof, 0),
-        ];
-        let expected_cursors = [
-            Cursor::new(1, 1, 0),
-            Cursor::new(1, 4, 3),
-            Cursor::new(1, 5, 4),
-            Cursor::new(1, 6, 5),
-            Cursor::new(1, 9, 8),
-            Cursor::new(2, 1, 9),
-            Cursor::new(2, 6, 14),
-            Cursor::new(2, 7, 15),
-            Cursor::new(2, 8, 16),
-            Cursor::new(2, 27, 35),
-            Cursor::new(3, 1, 36),
-            Cursor::new(3, 11, 46),
-            Cursor::new(4, 1, 47),
-            Cursor::new(4, 4, 50),
-            Cursor::new(4, 5, 51),
-            Cursor::new(4, 6, 52),
-            Cursor::new(4, 13, 59),
-            Cursor::new(4, 14, 60),
-            Cursor::new(4, 24, 70),
-            Cursor::new(5, 1, 71),
-            Cursor::new(5, 10, 80),
-            Cursor::new(5, 11, 81),
-            Cursor::new(5, 12, 82),
-            Cursor::new(9, 4, 116),
-            Cursor::new(10, 1, 117),
+        let expected = [
+            Span::new(TokenKind::TextUnquoted, Cursor::new(1, 1, 0), 3),
+            Span::new(TokenKind::Colon, Cursor::new(1, 4, 3), 1),
+            Span::new(TokenKind::Whitespace, Cursor::new(1, 5, 4), 1),
+            Span::new(TokenKind::TextUnquoted, Cursor::new(1, 6, 5), 3),
+            Span::new(TokenKind::NewLine, Cursor::new(1, 9, 8), 1),
+            Span::new(TokenKind::TextSingle, Cursor::new(2, 1, 9), 5),
+            Span::new(TokenKind::Colon, Cursor::new(2, 6, 14), 1),
+            Span::new(TokenKind::Whitespace, Cursor::new(2, 7, 15), 1),
+            Span::new(TokenKind::TextUnquoted, Cursor::new(2, 8, 16), 19),
+            Span::new(TokenKind::NewLine, Cursor::new(2, 27, 35), 1),
+            Span::new(TokenKind::LineComment, Cursor::new(3, 1, 36), 10),
+            Span::new(TokenKind::NewLine, Cursor::new(3, 11, 46), 1),
+            Span::new(TokenKind::TextUnquoted, Cursor::new(4, 1, 47), 3),
+            Span::new(TokenKind::Colon, Cursor::new(4, 4, 50), 1),
+            Span::new(TokenKind::Whitespace, Cursor::new(4, 5, 51), 1),
+            Span::new(TokenKind::TextDouble, Cursor::new(4, 6, 52), 7),
+            Span::new(TokenKind::Whitespace, Cursor::new(4, 13, 59), 1),
+            Span::new(TokenKind::LineComment, Cursor::new(4, 14, 60), 10),
+            Span::new(TokenKind::NewLine, Cursor::new(4, 24, 70), 1),
+            Span::new(TokenKind::TextUnquoted, Cursor::new(5, 1, 71), 9),
+            Span::new(TokenKind::Colon, Cursor::new(5, 10, 80), 1),
+            Span::new(TokenKind::Whitespace, Cursor::new(5, 11, 81), 1),
+            Span::new(TokenKind::TextMulti, Cursor::new(5, 12, 82), 34),
+            Span::new(TokenKind::NewLine, Cursor::new(9, 4, 116), 1),
+            Span::new(TokenKind::Eof, Cursor::new(10, 1, 117), 0),
         ];
 
         let tokens: Vec<_> = Tokens::parse(input).collect();
-        let expected = iter::zip(expected_cursors, expected_tokens);
         for (got, expected) in iter::zip(tokens, expected) {
             assert_eq!(got, expected);
         }
@@ -225,11 +204,11 @@ mod test {
 
         let tokens: Vec<_> = Tokens::parse(input).collect();
         let expected = [
-            (Cursor::new(1, 1, 0), Token::new(TokenKind::TextUnquoted, 3)),
-            (Cursor::new(1, 4, 3), Token::new(TokenKind::Colon, 1)),
-            (Cursor::new(1, 5, 4), Token::new(TokenKind::Whitespace, 1)),
-            (Cursor::new(1, 6, 5), Token::new(TokenKind::TextUnquoted, 9)),
-            (Cursor::new(1, 15, 14), Token::new(TokenKind::Eof, 0)),
+            Span::new(TokenKind::TextUnquoted, Cursor::new(1, 1, 0), 3),
+            Span::new(TokenKind::Colon, Cursor::new(1, 4, 3), 1),
+            Span::new(TokenKind::Whitespace, Cursor::new(1, 5, 4), 1),
+            Span::new(TokenKind::TextUnquoted, Cursor::new(1, 6, 5), 9),
+            Span::new(TokenKind::Eof, Cursor::new(1, 15, 14), 0),
         ];
 
         for (got, expected) in iter::zip(tokens, expected) {
@@ -244,11 +223,11 @@ mod test {
 
         let tokens: Vec<_> = Tokens::parse(input).collect();
         let expected = [
-            (Cursor::new(1, 1, 0), Token::new(TokenKind::TextUnquoted, 2)),
-            (Cursor::new(1, 3, 2), Token::new(TokenKind::Colon, 1)),
-            (Cursor::new(1, 4, 3), Token::new(TokenKind::Whitespace, 1)),
-            (Cursor::new(1, 5, 4), Token::new(TokenKind::TextSingle, 5)),
-            (Cursor::new(1, 10, 9), Token::new(TokenKind::Eof, 0)),
+            Span::new(TokenKind::TextUnquoted, Cursor::new(1, 1, 0), 2),
+            Span::new(TokenKind::Colon, Cursor::new(1, 3, 2), 1),
+            Span::new(TokenKind::Whitespace, Cursor::new(1, 4, 3), 1),
+            Span::new(TokenKind::TextSingle, Cursor::new(1, 5, 4), 5),
+            Span::new(TokenKind::Eof, Cursor::new(1, 10, 9), 0),
         ];
 
         for (got, expected) in iter::zip(tokens, expected) {
