@@ -6,8 +6,8 @@ use crate::lexer::{Cursor, Span, TokenKind};
 use crate::parser::ast::{Array, ArrayMember, Map, MapMember, Node, Value};
 use crate::parser::{ParseError, Parser};
 
-use self::config::AllowDeny;
 pub use self::config::Config;
+use self::config::{AllowDeny, AllowDenyRequire};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Lint {
@@ -23,12 +23,14 @@ pub struct LintSpan {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum LintKind {
+    ImplicitBraces,
     TrailingWhitespace,
 }
 
 impl Display for LintKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            LintKind::ImplicitBraces => f.write_str("implicit braces"),
             LintKind::TrailingWhitespace => f.write_str("trailing whitespace"),
         }
     }
@@ -54,6 +56,7 @@ impl Linter {
     }
 
     fn lint_root(&mut self, map: &Map) {
+        self.lint_root_braces(map);
         self.lint_map(map);
     }
 
@@ -132,6 +135,49 @@ impl Linter {
         trailing_whitespace(&node.before);
         trailing_whitespace(&node.after);
     }
+
+    fn lint_root_braces(&mut self, map: &Map) {
+        match self.config.root_braces {
+            AllowDenyRequire::Deny => {
+                if let Some(ref brace) = map.open_brace.inner {
+                    self.lints.push(Lint {
+                        kind: LintKind::ImplicitBraces,
+                        span: LintSpan {
+                            start: brace.start,
+                            len: brace.len,
+                        },
+                    });
+                }
+            }
+            AllowDenyRequire::Require if map.open_brace.inner.is_none() => {
+                let cursor = map
+                    .open_brace
+                    .before
+                    .last()
+                    .map_or(Cursor::default(), |span| {
+                        let newline = span.kind == TokenKind::NewLine;
+                        Cursor {
+                            line: span.start.line + if newline { 1 } else { 0 },
+                            column: if newline {
+                                1
+                            } else {
+                                span.start.column + span.len
+                            },
+                            byte_offset: span.start.byte_offset + span.len,
+                        }
+                    });
+
+                self.lints.push(Lint {
+                    kind: LintKind::ImplicitBraces,
+                    span: LintSpan {
+                        start: cursor,
+                        len: 0,
+                    },
+                });
+            }
+            _ => (),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -195,5 +241,64 @@ mod test {
         );
         // Not trailing whitespace if it's closed by the map on the same line.
         assert_eq!(Linter::lint(conf, "{ 'foo': 3  \t}").unwrap(), Vec::new());
+    }
+
+    #[test]
+    fn allow_root_braces() {
+        let conf = Config {
+            root_braces: AllowDenyRequire::Allow,
+            ..Default::default()
+        };
+
+        assert!(Linter::lint(conf, "{ 'foo': 3 }").unwrap().is_empty());
+        assert!(Linter::lint(conf, "'foo': 3").unwrap().is_empty());
+    }
+
+    #[test]
+    fn deny_root_braces() {
+        let conf = Config {
+            root_braces: AllowDenyRequire::Deny,
+            ..Default::default()
+        };
+
+        assert_eq!(Linter::lint(conf, "'foo': 3").unwrap(), Vec::new());
+        assert_eq!(
+            Linter::lint(conf, "{ 'foo': 3 }").unwrap(),
+            Vec::from([Lint {
+                kind: LintKind::ImplicitBraces,
+                span: LintSpan {
+                    start: Cursor {
+                        line: 1,
+                        column: 1,
+                        byte_offset: 0
+                    },
+                    len: 1,
+                }
+            }])
+        );
+    }
+
+    #[test]
+    fn require_root_braces() {
+        let conf = Config {
+            root_braces: AllowDenyRequire::Require,
+            ..Default::default()
+        };
+
+        assert_eq!(Linter::lint(conf, "{ 'foo': 3 }").unwrap(), Vec::new());
+        assert_eq!(
+            Linter::lint(conf, "'foo': 3").unwrap(),
+            Vec::from([Lint {
+                kind: LintKind::ImplicitBraces,
+                span: LintSpan {
+                    start: Cursor {
+                        line: 1,
+                        column: 1,
+                        byte_offset: 0
+                    },
+                    len: 0,
+                }
+            }])
+        );
     }
 }
