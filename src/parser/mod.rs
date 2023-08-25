@@ -49,50 +49,39 @@ impl<'a> Parser<'a> {
         TokenKind::Null,
     ];
 
-    pub fn parse(input: &'a str) -> ParseResult<Node<ast::Map>> {
+    pub fn parse(input: &'a str) -> ParseResult<ast::Map> {
         let tokens = Tokens::parse(input).peekable();
         let mut parser = Self { tokens };
 
         parser.parse_root()
     }
 
-    fn parse_root(&mut self) -> ParseResult<Node<ast::Map>> {
-        let before = self.skip(Self::HIDDEN);
-
-        let open_brace = self
-            .eat(&[TokenKind::OpenBrace])
-            .map(|token| Node::new(Vec::new(), token, self.skip(Self::HIDDEN_LINE)));
+    fn parse_root(&mut self) -> ParseResult<ast::Map> {
+        let open_brace = Node::new(
+            self.skip(Self::HIDDEN),
+            self.eat(&[TokenKind::OpenBrace]),
+            self.skip(Self::HIDDEN_LINE),
+        );
 
         let members = self.parse_map_members()?;
 
-        let (close_brace, after) = if open_brace.is_some() {
-            // Explicit close brace.
-            let close_brace = Some(Node::new(
-                self.skip(Self::HIDDEN),
-                self.expect(TokenKind::CloseBrace)?,
-                Vec::new(),
-            ));
-
-            (close_brace, self.skip(Self::HIDDEN))
-        } else {
-            // Implicit close brace.
-            let after = self.skip(Self::HIDDEN);
-            self.expect(TokenKind::Eof)?;
-
-            (None, after)
-        };
-
-        let node = Node::new(
-            before,
-            ast::Map {
-                open_brace,
-                members,
-                close_brace,
-            },
-            after,
+        let close_brace = Node::new(
+            self.skip(Self::HIDDEN),
+            open_brace
+                .inner
+                .as_ref()
+                .map(|_| self.expect(TokenKind::CloseBrace))
+                .transpose()?,
+            self.skip(Self::HIDDEN),
         );
 
-        Ok(node)
+        let root = ast::Map {
+            open_brace,
+            members,
+            close_brace,
+        };
+
+        Ok(root)
     }
 
     fn parse_map_members(&mut self) -> ParseResult<Vec<Node<ast::MapMember>>> {
@@ -113,23 +102,16 @@ impl<'a> Parser<'a> {
 
             let value = self.expect_value()?;
 
-            let mut after = self.skip(Self::HIDDEN_LINE);
-
-            let comma = if let Some(comma) = self.eat(&[TokenKind::Comma]) {
-                // Explicit comma.
-                let before = mem::take(&mut after);
-                let node = Node::new(before, comma, self.skip(Self::HIDDEN));
-                Some(node)
-            } else if let Some(newline) = self.eat(&[TokenKind::NewLine]) {
-                // Implicit comma.
-                after.push(newline);
-                None
-            } else {
-                // End of members.
-                break;
+            let mut comma_before = self.skip(Self::HIDDEN_LINE);
+            let comma = self.eat(&[TokenKind::Comma]);
+            let mut comma_after = match &comma {
+                Some(_) => self.skip(Self::HIDDEN_LINE),
+                None => mem::take(&mut comma_before),
             };
-
-            after.extend(self.skip(Self::HIDDEN));
+            if let Some(term) = self.eat(&[TokenKind::NewLine, TokenKind::Eof]) {
+                comma_after.push(term);
+            }
+            let comma = Node::new(comma_before, comma, comma_after);
 
             let node = Node::new(
                 before,
@@ -139,7 +121,7 @@ impl<'a> Parser<'a> {
                     value,
                     comma,
                 },
-                after,
+                self.skip(Self::HIDDEN),
             );
             members.push(node);
         }
@@ -171,19 +153,15 @@ impl<'a> Parser<'a> {
             return Ok(None)
         };
 
-        let open_brace = Some(Node::new(
-            Vec::new(),
-            open_brace,
-            self.skip(Self::HIDDEN_LINE),
-        ));
+        let open_brace = Node::new(Vec::new(), Some(open_brace), self.skip(Self::HIDDEN_LINE));
 
         let members = self.parse_map_members()?;
 
-        let close_brace = Some(Node::new(
+        let close_brace = Node::new(
             self.skip(Self::HIDDEN),
-            self.expect(TokenKind::CloseBrace)?,
+            Some(self.expect(TokenKind::CloseBrace)?),
             Vec::new(),
-        ));
+        );
 
         let map = ast::Map {
             open_brace,
@@ -207,30 +185,25 @@ impl<'a> Parser<'a> {
 
         let mut before;
         loop {
-            // if there's no value, this should become part of the close bracket's `before`.
+            // if there's no value, this space will become part of the close bracket's `before`.
             before = self.skip(Self::HIDDEN);
 
             let Some(value) = self.parse_value()? else {
                 break;
             };
 
-            let mut after = self.skip(Self::HIDDEN_LINE);
-
-            let comma = if let Some(comma) = self.eat(&[TokenKind::Comma]) {
-                // Explicit comma.
-                let before = mem::take(&mut after);
-                let node = Node::new(before, comma, self.skip(Self::HIDDEN));
-                Some(node)
-            } else if let Some(newline) = self.eat(&[TokenKind::NewLine]) {
-                // Implicit comma.
-                after.push(newline);
-                None
-            } else {
-                // End of members.
-                break;
+            let mut comma_before = self.skip(Self::HIDDEN_LINE);
+            let comma = self.eat(&[TokenKind::Comma]);
+            let mut comma_after = match &comma {
+                Some(_) => self.skip(Self::HIDDEN_LINE),
+                None => mem::take(&mut comma_before),
             };
+            if let Some(term) = self.eat(&[TokenKind::NewLine, TokenKind::Eof]) {
+                comma_after.push(term);
+            }
+            let comma = Node::new(comma_before, comma, comma_after);
 
-            let node = Node::new(before, ast::ArrayMember { value, comma }, after);
+            let node = Node::new(before, ast::ArrayMember { value, comma }, Vec::new());
             members.push(node);
         }
 
@@ -268,8 +241,12 @@ impl<'a> Parser<'a> {
         };
 
         if kinds.contains(&next.kind) {
-            let span = self.tokens.next().expect("expected token");
-            Some(span)
+            // If EOF, give the peeked token without taking it off the iterator.
+            if next.kind == TokenKind::Eof {
+                Some(next.clone())
+            } else {
+                Some(self.tokens.next().expect("expected token"))
+            }
         } else {
             None
         }
@@ -281,7 +258,6 @@ impl<'a> Parser<'a> {
     }
 
     fn expect(&mut self, kind: TokenKind) -> ParseResult<Span> {
-        // This iterator returns an EOF token at the end (not `None`), so we can expect it.
         let next = self.tokens.next().expect("expected token");
 
         if next.kind == kind {
