@@ -1,17 +1,51 @@
+mod config;
+
+use std::fmt::{self, Display};
+
+use crate::lexer::Cursor;
 use crate::parser::ast::{Array, ArrayMember, Map, MapMember, Node, Value};
 use crate::parser::{ParseError, Parser};
 
+pub use self::config::Config;
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Lint {
+    kind: LintKind,
+    span: LintSpan,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LintSpan {
+    start: Cursor,
+    len: usize,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LintKind {}
+
+impl Display for LintKind {
+    fn fmt(&self, _f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Ok(())
+    }
+}
+
 #[derive(Clone, Debug, Default)]
-pub struct Linter;
+pub struct Linter {
+    config: Config,
+    lints: Vec<Lint>,
+}
 
 impl Linter {
-    pub fn lint(input: &str) -> Result<(), ParseError> {
-        let mut linter = Linter::default();
+    pub fn lint(config: Config, input: &str) -> Result<Vec<Lint>, ParseError> {
+        let mut linter = Linter {
+            config,
+            lints: Vec::new(),
+        };
 
         let ast = Parser::parse(input)?;
         linter.lint_root(&ast);
 
-        Ok(())
+        Ok(linter.lints)
     }
 
     fn lint_root(&mut self, map: &Map) {
@@ -19,7 +53,7 @@ impl Linter {
     }
 
     fn lint_map(&mut self, map: &Map) {
-        for map_member in &map.members {
+        for map_member in map.members.iter() {
             self.lint_map_member(map_member);
         }
     }
@@ -29,7 +63,7 @@ impl Linter {
     }
 
     fn lint_array(&mut self, array: &Array) {
-        for array_member in &array.members {
+        for array_member in array.members.iter() {
             self.lint_array_member(array_member);
         }
     }
