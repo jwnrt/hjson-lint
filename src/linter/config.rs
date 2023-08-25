@@ -25,11 +25,10 @@ pub struct Config {
 }
 
 impl Default for Config {
-    /// By default, we `Allow` all Hjson features and only deny obvious
-    /// style issues (e.g. trailing whitespace).
+    /// Allow everything by default so lints can be opted into.
     fn default() -> Self {
         Self {
-            trailing_whitespace: AllowDeny::Deny,
+            trailing_whitespace: AllowDeny::Allow,
             root_braces: AllowDenyRequire::Allow,
             missing_commas: AllowDeny::Allow,
             trailing_commas: AllowDenyRequire::Allow,
