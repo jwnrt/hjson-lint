@@ -64,9 +64,7 @@ impl Parse for Number {
         // an unquoted string that started with a digit.
         // We strip whitespace first (except for newlines).
         let term_symbols = [',', ':', '[', ']', '{', '}', '\n'];
-        let input = input
-            .strip_prefix(|c: char| c.is_whitespace() && c != '\n')
-            .unwrap_or(input);
+        let input = input.trim_start_matches(|c: char| c.is_whitespace() && c != '\n');
         match input.is_empty() || input.starts_with(|c: char| term_symbols.contains(&c)) {
             true => Some(Token::new(kind, len)),
             false => None,
@@ -147,5 +145,13 @@ mod test {
         for case in bad_cases {
             assert_eq!(Number::parse(case), None);
         }
+    }
+
+    #[test]
+    fn terminate() {
+        assert!(Number::parse("5 ").is_some());
+        assert!(Number::parse("5}").is_some());
+        assert!(Number::parse("5 }").is_some());
+        assert!(Number::parse("5  \t}").is_some());
     }
 }
