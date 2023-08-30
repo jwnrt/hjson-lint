@@ -2,17 +2,17 @@ use crate::lexer::Span;
 
 #[derive(Clone, Debug)]
 pub struct Node<T> {
-    _before: Vec<Span>,
+    pub before: Vec<Span>,
     pub inner: T,
-    _after: Vec<Span>,
+    pub after: Vec<Span>,
 }
 
 impl<T> Node<T> {
     pub fn new(before: Vec<Span>, inner: T, after: Vec<Span>) -> Self {
         Self {
-            _before: before,
+            before,
             inner,
-            _after: after,
+            after,
         }
     }
 }
