@@ -1,5 +1,6 @@
 [workspace]
 members = [
   "hjson-lint",
+  "hjson-parser",
 ]
 resolver = "2"
