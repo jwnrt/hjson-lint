@@ -1,9 +1,5 @@
-[package]
-name = "hjson-lint"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-
-[dev-dependencies]
-indoc = "2.0.3"
+[workspace]
+members = [
+  "hjson-lint",
+]
+resolver = "2"
