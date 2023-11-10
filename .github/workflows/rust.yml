@@ -18,6 +18,14 @@ jobs:
     - name: Test
       run: cargo test --verbose
 
+  doc:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Doc
+      run: RUSTDOCFLAGS="-D warnings" cargo doc
+
   format:
     runs-on: ubuntu-latest
 
