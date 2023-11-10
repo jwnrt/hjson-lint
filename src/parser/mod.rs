@@ -150,7 +150,7 @@ impl<'a> Parser<'a> {
 
     fn parse_map(&mut self) -> ParseResult<Option<ast::Map>> {
         let Some(open_brace) = self.eat(&[TokenKind::OpenBrace]) else {
-            return Ok(None)
+            return Ok(None);
         };
 
         let open_brace = Node::new(Vec::new(), Some(open_brace), self.skip(Self::HIDDEN_LINE));
