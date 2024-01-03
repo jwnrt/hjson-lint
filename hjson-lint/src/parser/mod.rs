@@ -17,7 +17,7 @@ pub struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
-    const HIDDEN: &[TokenKind] = &[
+    const HIDDEN: &'static [TokenKind] = &[
         TokenKind::Whitespace,
         TokenKind::NewLine,
         TokenKind::LineComment,
@@ -25,20 +25,20 @@ impl<'a> Parser<'a> {
         TokenKind::BlockComment,
     ];
 
-    const HIDDEN_LINE: &[TokenKind] = &[
+    const HIDDEN_LINE: &'static [TokenKind] = &[
         TokenKind::Whitespace,
         TokenKind::LineComment,
         TokenKind::HashComment,
         TokenKind::BlockComment,
     ];
 
-    const KEY: &[TokenKind] = &[
+    const KEY: &'static [TokenKind] = &[
         TokenKind::TextSingle,
         TokenKind::TextDouble,
         TokenKind::TextUnquoted,
     ];
 
-    const VALUE: &[TokenKind] = &[
+    const VALUE: &'static [TokenKind] = &[
         TokenKind::Boolean,
         TokenKind::Integer,
         TokenKind::Float,
