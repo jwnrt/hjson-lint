@@ -4,11 +4,9 @@ mod token;
 mod tree;
 
 use parser::Parser;
+pub use tree::Tree;
 
-pub fn parse(input: &str) {
+pub fn parse(input: &str) -> Tree {
     let events = Parser::parse(input);
-
-    for event in events {
-        println!("{event:#?}");
-    }
+    Tree::build(events)
 }
