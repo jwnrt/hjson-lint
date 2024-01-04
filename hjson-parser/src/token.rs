@@ -2,8 +2,8 @@ use std::fmt::{self, Display};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Token {
-    kind: TokenKind,
-    len: usize,
+    pub kind: TokenKind,
+    pub len: usize,
 }
 
 /// Kinds of token in the Hjson grammar.
